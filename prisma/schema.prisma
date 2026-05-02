@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String      @id @default(uuid())
+  phone     String?     @unique
+  fullName  String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  checkIns  CheckIn[]
+  reviews   Review[]
+  offers    UserOffer[]
+}
+
+model Business {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  email       String?
+  phone       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  brands      Brand[]
+}
+
+model Brand {
+  id          String   @id @default(uuid())
+  name        String
+  logoUrl     String?
+  description String?
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  places      Place[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Place {
+  id           String    @id @default(uuid())
+  name         String
+  address      String
+  latitude     Float
+  longitude    Float
+  openingHours String?
+  phoneNumber  String?
+  images       String[]
+  brandId      String
+  brand        Brand     @relation(fields: [brandId], references: [id])
+  checkIns     CheckIn[]
+  reviews      Review[]
+  offers       Offer[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum QrType {
+  STATIC
+  DYNAMIC
+}
+
+model CheckIn {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  placeId    String
+  place      Place    @relation(fields: [placeId], references: [id])
+  latitude   Float?
+  longitude  Float?
+  deviceInfo String?
+  isGuest    Boolean  @default(false)
+  phone      String? // For guest check-in
+  qrType     QrType   @default(STATIC)
+  createdAt  DateTime @default(now())
+}
+
+model Review {
+  id        String        @id @default(uuid())
+  rating    Float
+  content   String?
+  images    String[]
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  placeId   String
+  place     Place         @relation(fields: [placeId], references: [id])
+  reply     ReviewReply?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([userId, placeId])
+}
+
+model ReviewReply {
+  id        String   @id @default(uuid())
+  content   String
+  reviewId  String   @unique
+  review    Review   @relation(fields: [reviewId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Offer {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  terms       String?
+  validFrom   DateTime
+  validTo     DateTime
+  placeId     String
+  place       Place       @relation(fields: [placeId], references: [id])
+  userOffers  UserOffer[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum OfferStatus {
+  SAVED
+  USED
+}
+
+model UserOffer {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  offerId   String
+  offer     Offer       @relation(fields: [offerId], references: [id])
+  status    OfferStatus @default(SAVED)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([userId, offerId])
+}

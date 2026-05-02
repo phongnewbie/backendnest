@@ -40,3 +40,9 @@ prisma/*.db-journal
 # Env
 .env
 .env.test
+
+# Documents
+BRD.md
+PLAN.md
+
+/generated/prisma
