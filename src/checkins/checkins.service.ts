@@ -3,28 +3,24 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { mockDb, QrType } from '../common/mock-data';
 import { CreateCheckInDto } from './dto/create-checkin.dto';
 import { DynamicCheckInDto } from './dto/dynamic-checkin.dto';
 import { calculateDistance } from '../common/utils/geo.util';
 import { ConfigService } from '@nestjs/config';
 import { DynamicQrService } from '../dynamic-qr/dynamic-qr.service';
-import { QrType } from '@prisma/client';
 
 @Injectable()
 export class CheckinsService {
   constructor(
-    private prisma: PrismaService,
     private configService: ConfigService,
     private dynamicQrService: DynamicQrService,
   ) {}
 
-  async create(createCheckInDto: CreateCheckInDto) {
+  create(createCheckInDto: CreateCheckInDto) {
     const { placeId, latitude, longitude, userId, phone } = createCheckInDto;
 
-    const place = await this.prisma.place.findUnique({
-      where: { id: placeId },
-    });
+    const place = mockDb.places.find((p) => p.id === placeId);
     if (!place) {
       throw new NotFoundException('Địa điểm không tồn tại.');
     }
@@ -54,16 +50,18 @@ export class CheckinsService {
       );
     }
 
-    return this.prisma.checkIn.create({
-      data: {
-        ...createCheckInDto,
-        qrType: QrType.STATIC,
-        isGuest,
-      },
-    });
+    const checkin = {
+      ...createCheckInDto,
+      id: mockDb.generateId(),
+      qrType: QrType.STATIC,
+      isGuest,
+      createdAt: new Date(),
+    };
+    mockDb.checkins.push(checkin);
+    return checkin;
   }
 
-  async createDynamic(dynamicCheckInDto: DynamicCheckInDto) {
+  createDynamic(dynamicCheckInDto: DynamicCheckInDto) {
     const { token, userId, deviceInfo, phone } = dynamicCheckInDto;
 
     const placeId = this.dynamicQrService.verifyToken(token);
@@ -80,27 +78,29 @@ export class CheckinsService {
       );
     }
 
-    return this.prisma.checkIn.create({
-      data: {
-        placeId,
-        userId,
-        deviceInfo,
-        phone,
-        qrType: QrType.DYNAMIC,
-        isGuest,
-      },
-    });
+    const checkin = {
+      id: mockDb.generateId(),
+      placeId,
+      userId,
+      deviceInfo,
+      phone,
+      qrType: QrType.DYNAMIC,
+      isGuest,
+      createdAt: new Date(),
+    };
+    mockDb.checkins.push(checkin);
+    return checkin;
   }
 
-  async findAllByPlace(placeId: string) {
-    return this.prisma.checkIn.findMany({
-      where: { placeId },
-      include: {
-        user: {
-          select: { id: true, fullName: true, phone: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  findAllByPlace(placeId: string) {
+    return mockDb.checkins
+      .filter((c) => c.placeId === placeId)
+      .map((c) => ({
+        ...c,
+        user: mockDb.users
+          .filter((u) => u.id === c.userId)
+          .map((u) => ({ id: u.id, fullName: u.fullName, phone: u.phone }))[0],
+      }))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }

@@ -1,40 +1,57 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { mockDb } from '../common/mock-data';
+import { CreateBrandDto } from './dto/create-brand.dto';
+import { UpdateBrandDto } from './dto/update-brand.dto';
 
 @Injectable()
 export class BrandsService {
-  constructor(private prisma: PrismaService) {}
-
-  async create(data: {
-    name: string;
-    logoUrl?: string;
-    description?: string;
-    businessId: string;
-  }) {
-    return this.prisma.brand.create({ data });
+  create(createBrandDto: CreateBrandDto) {
+    const brand = {
+      ...createBrandDto,
+      id: mockDb.generateId(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockDb.brands.push(brand);
+    return brand;
   }
 
-  async findAll() {
-    return this.prisma.brand.findMany({
-      include: { business: true, places: true },
-    });
+  findAll() {
+    return mockDb.brands.map((brand) => ({
+      ...brand,
+      business: mockDb.businesses.find((b) => b.id === brand.businessId),
+      places: mockDb.places.filter((p) => p.brandId === brand.id),
+    }));
   }
 
-  async findOne(id: string) {
-    return this.prisma.brand.findUnique({
-      where: { id },
-      include: { business: true, places: true },
-    });
+  findOne(id: string) {
+    const brand = mockDb.brands.find((b) => b.id === id);
+    if (!brand) throw new NotFoundException('Brand not found');
+
+    return {
+      ...brand,
+      business: mockDb.businesses.find((b) => b.id === brand.businessId),
+      places: mockDb.places.filter((p) => p.brandId === brand.id),
+    };
   }
 
-  async update(
-    id: string,
-    data: { name?: string; logoUrl?: string; description?: string },
-  ) {
-    return this.prisma.brand.update({ where: { id }, data });
+  update(id: string, updateBrandDto: UpdateBrandDto) {
+    const index = mockDb.brands.findIndex((b) => b.id === id);
+    if (index === -1) throw new NotFoundException('Brand not found');
+
+    mockDb.brands[index] = {
+      ...mockDb.brands[index],
+      ...updateBrandDto,
+      updatedAt: new Date(),
+    };
+    return mockDb.brands[index];
   }
 
-  async remove(id: string) {
-    return this.prisma.brand.delete({ where: { id } });
+  remove(id: string) {
+    const index = mockDb.brands.findIndex((b) => b.id === id);
+    if (index === -1) throw new NotFoundException('Brand not found');
+
+    const deleted = mockDb.brands.splice(index, 1);
+    return deleted[0];
   }
 }

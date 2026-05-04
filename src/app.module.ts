@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { BusinessesModule } from './businesses/businesses.module';
 import { BrandsModule } from './brands/brands.module';
@@ -12,7 +11,6 @@ import { OffersModule } from './offers/offers.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule,
     BusinessesModule,
     BrandsModule,
     PlacesModule,

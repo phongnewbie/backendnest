@@ -3,22 +3,19 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { mockDb } from '../common/mock-data';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private prisma: PrismaService) {}
-
-  async create(createReviewDto: CreateReviewDto) {
+  create(createReviewDto: CreateReviewDto) {
     const { userId, placeId } = createReviewDto;
 
     // Check if user already reviewed this place
-    const existing = await this.prisma.review.findUnique({
-      where: {
-        userId_placeId: { userId, placeId },
-      },
-    });
+    const existing = mockDb.reviews.find(
+      (r) => r.userId === userId && r.placeId === placeId,
+    );
 
     if (existing) {
       throw new BadRequestException(
@@ -26,64 +23,77 @@ export class ReviewsService {
       );
     }
 
-    try {
-      return await this.prisma.review.create({
-        data: createReviewDto,
-      });
-    } catch {
-      throw new BadRequestException(
-        'Không thể tạo đánh giá. Vui lòng kiểm tra lại thông tin.',
-      );
-    }
+    const review = {
+      ...createReviewDto,
+      images: createReviewDto.images || [],
+      id: mockDb.generateId(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockDb.reviews.push(review);
+    return review;
   }
 
-  async findAllByPlace(placeId: string) {
-    return this.prisma.review.findMany({
-      where: { placeId },
-      include: {
-        user: { select: { id: true, fullName: true } },
-        reply: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  findAllByPlace(placeId: string) {
+    return mockDb.reviews
+      .filter((r) => r.placeId === placeId)
+      .map((r) => ({
+        ...r,
+        user: mockDb.users
+          .filter((u) => u.id === r.userId)
+          .map((u) => ({ id: u.id, fullName: u.fullName }))[0],
+        reply: mockDb.reviewReplies.find((rep) => rep.reviewId === r.id),
+      }))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async update(
-    id: string,
-    data: { rating?: number; content?: string; images?: string[] },
-  ) {
-    try {
-      return await this.prisma.review.update({
-        where: { id },
-        data,
-      });
-    } catch {
+  update(id: string, updateReviewDto: UpdateReviewDto) {
+    const index = mockDb.reviews.findIndex((r) => r.id === id);
+    if (index === -1) {
       throw new NotFoundException('Không tìm thấy đánh giá để cập nhật.');
     }
+
+    mockDb.reviews[index] = {
+      ...mockDb.reviews[index],
+      ...updateReviewDto,
+      updatedAt: new Date(),
+    };
+    return mockDb.reviews[index];
   }
 
-  async remove(id: string) {
-    try {
-      return await this.prisma.review.delete({ where: { id } });
-    } catch {
+  remove(id: string) {
+    const index = mockDb.reviews.findIndex((r) => r.id === id);
+    if (index === -1) {
       throw new NotFoundException('Không tìm thấy đánh giá để xóa.');
     }
+
+    const deleted = mockDb.reviews.splice(index, 1);
+    return deleted[0];
   }
 
-  async reply(reviewId: string, content: string) {
+  reply(reviewId: string, content: string) {
     if (!content)
       throw new BadRequestException('Nội dung phản hồi không được để trống.');
 
-    const review = await this.prisma.review.findUnique({
-      where: { id: reviewId },
-    });
+    const review = mockDb.reviews.find((r) => r.id === reviewId);
     if (!review)
       throw new NotFoundException('Không tìm thấy đánh giá để phản hồi.');
 
-    return this.prisma.reviewReply.upsert({
-      where: { reviewId },
-      update: { content },
-      create: { reviewId, content },
-    });
+    let reply = mockDb.reviewReplies.find((rep) => rep.reviewId === reviewId);
+    if (reply) {
+      reply.content = content;
+      reply.updatedAt = new Date();
+    } else {
+      reply = {
+        id: mockDb.generateId(),
+        reviewId,
+        content,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockDb.reviewReplies.push(reply);
+    }
+
+    return reply;
   }
 }

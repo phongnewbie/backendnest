@@ -1,18 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../prisma/prisma.service';
+import { mockDb } from '../common/mock-data';
 
 @Injectable()
 export class DynamicQrService {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly jwtService: JwtService) {}
 
-  async generateToken(placeId: string) {
-    const place = await this.prisma.place.findUnique({
-      where: { id: placeId },
-    });
+  generateToken(placeId: string) {
+    const place = mockDb.places.find((p) => p.id === placeId);
     if (!place) {
       throw new NotFoundException('Địa điểm không tồn tại');
     }

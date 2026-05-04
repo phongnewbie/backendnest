@@ -3,17 +3,13 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { mockDb, OfferStatus } from '../common/mock-data';
 import { CreateOfferDto } from './dto/create-offer.dto';
 
 @Injectable()
 export class OffersService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async create(createOfferDto: CreateOfferDto) {
-    const place = await this.prisma.place.findUnique({
-      where: { id: createOfferDto.placeId },
-    });
+  create(createOfferDto: CreateOfferDto) {
+    const place = mockDb.places.find((p) => p.id === createOfferDto.placeId);
     if (!place) {
       throw new NotFoundException('Địa điểm không tồn tại');
     }
@@ -26,52 +22,70 @@ export class OffersService {
       );
     }
 
-    return this.prisma.offer.create({
-      data: createOfferDto,
-    });
+    const offer = {
+      ...createOfferDto,
+      validFrom: new Date(createOfferDto.validFrom),
+      validTo: new Date(createOfferDto.validTo),
+      id: mockDb.generateId(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockDb.offers.push(offer);
+    return offer;
   }
 
-  async findAllByPlace(placeId: string) {
-    return this.prisma.offer.findMany({
-      where: {
-        placeId,
-        validTo: { gte: new Date() }, // Only return valid offers
-      },
-      orderBy: { validFrom: 'asc' },
-    });
+  findAllByPlace(placeId: string) {
+    const now = new Date();
+    return mockDb.offers
+      .filter((o) => o.placeId === placeId && o.validTo >= now)
+      .sort((a, b) => a.validFrom.getTime() - b.validFrom.getTime());
   }
 
-  async saveOffer(userId: string, offerId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    const offer = await this.prisma.offer.findUnique({
-      where: { id: offerId },
-    });
+  saveOffer(userId: string, offerId: string) {
+    const user = mockDb.users.find((u) => u.id === userId);
+    const offer = mockDb.offers.find((o) => o.id === offerId);
 
     if (!user) throw new NotFoundException('Người dùng không tồn tại');
     if (!offer) throw new NotFoundException('Ưu đãi không tồn tại');
-    if (new Date(offer.validTo) < new Date())
+    if (offer.validTo < new Date())
       throw new BadRequestException('Ưu đãi đã hết hạn');
 
-    const existing = await this.prisma.userOffer.findUnique({
-      where: { userId_offerId: { userId, offerId } },
-    });
+    const existing = mockDb.userOffers.find(
+      (uo) => uo.userId === userId && uo.offerId === offerId,
+    );
 
     if (existing) {
       throw new BadRequestException('Bạn đã lưu ưu đãi này rồi');
     }
 
-    return this.prisma.userOffer.create({
-      data: { userId, offerId },
-    });
+    const userOffer = {
+      id: mockDb.generateId(),
+      userId,
+      offerId,
+      status: OfferStatus.SAVED,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockDb.userOffers.push(userOffer);
+    return userOffer;
   }
 
-  async getUserOffers(userId: string) {
-    return this.prisma.userOffer.findMany({
-      where: { userId },
-      include: {
-        offer: { include: { place: { select: { id: true, name: true } } } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  getUserOffers(userId: string) {
+    return mockDb.userOffers
+      .filter((uo) => uo.userId === userId)
+      .map((uo) => ({
+        ...uo,
+        offer: {
+          ...mockDb.offers.find((o) => o.id === uo.offerId),
+          place: mockDb.places
+            .filter(
+              (p) =>
+                p.id ===
+                mockDb.offers.find((o) => o.id === uo.offerId)?.placeId,
+            )
+            .map((p) => ({ id: p.id, name: p.name }))[0],
+        },
+      }))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }
