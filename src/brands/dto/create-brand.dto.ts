@@ -5,7 +5,7 @@ export class CreateBrandDto {
   @ApiProperty({ example: 'Brand X', description: 'The name of the brand' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({
     example: 'https://example.com/logo.png',
@@ -29,5 +29,5 @@ export class CreateBrandDto {
   })
   @IsUUID()
   @IsNotEmpty()
-  businessId: string;
+  businessId!: string;
 }
