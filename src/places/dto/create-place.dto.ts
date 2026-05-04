@@ -12,7 +12,7 @@ export class CreatePlaceDto {
   @ApiProperty({ example: 'Coffee House', description: 'Name of the place' })
   @IsString()
   @IsNotEmpty({ message: 'Tên địa điểm không được để trống' })
-  name: string;
+  name!: string;
 
   @ApiProperty({
     example: '123 Nguyen Hue, Dist 1, HCMC',
@@ -20,17 +20,17 @@ export class CreatePlaceDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'Địa chỉ không được để trống' })
-  address: string;
+  address!: string;
 
   @ApiProperty({ example: 10.776, description: 'Latitude' })
   @IsNumber()
   @IsNotEmpty()
-  latitude: number;
+  latitude!: number;
 
   @ApiProperty({ example: 106.701, description: 'Longitude' })
   @IsNumber()
   @IsNotEmpty()
-  longitude: number;
+  longitude!: number;
 
   @ApiPropertyOptional({
     example: '08:00 - 22:00',
@@ -57,5 +57,5 @@ export class CreatePlaceDto {
   @ApiProperty({ example: 'uuid-of-brand', description: 'ID of the brand' })
   @IsUUID('4', { message: 'ID nhãn hàng không hợp lệ' })
   @IsNotEmpty()
-  brandId: string;
+  brandId!: string;
 }

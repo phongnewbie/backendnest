@@ -21,7 +21,7 @@ export class CreateReviewDto {
   @Min(0, { message: 'Đánh giá thấp nhất là 0 sao' })
   @Max(5, { message: 'Đánh giá cao nhất là 5 sao' })
   @IsNotEmpty({ message: 'Số sao không được để trống' })
-  rating: number;
+  rating!: number;
 
   @ApiPropertyOptional({
     example: 'Great place!',
@@ -43,10 +43,10 @@ export class CreateReviewDto {
   @ApiProperty({ example: 'uuid-of-user', description: 'ID of the user' })
   @IsUUID('4', { message: 'ID người dùng không hợp lệ' })
   @IsNotEmpty()
-  userId: string;
+  userId!: string;
 
   @ApiProperty({ example: 'uuid-of-place', description: 'ID of the place' })
   @IsUUID('4', { message: 'ID địa điểm không hợp lệ' })
   @IsNotEmpty()
-  placeId: string;
+  placeId!: string;
 }

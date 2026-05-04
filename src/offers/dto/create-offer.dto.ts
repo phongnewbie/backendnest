@@ -11,7 +11,7 @@ export class CreateOfferDto {
   @ApiProperty({ example: 'Sale 50%', description: 'Title of the offer' })
   @IsString()
   @IsNotEmpty({ message: 'Tiêu đề ưu đãi không được để trống' })
-  title: string;
+  title!: string;
 
   @ApiPropertyOptional({
     example: 'Half price for all drinks',
@@ -35,7 +35,7 @@ export class CreateOfferDto {
   })
   @IsDateString()
   @IsNotEmpty({ message: 'Ngày bắt đầu không được để trống' })
-  validFrom: string;
+  validFrom!: string;
 
   @ApiProperty({
     example: '2024-12-31T23:59:59Z',
@@ -43,10 +43,10 @@ export class CreateOfferDto {
   })
   @IsDateString()
   @IsNotEmpty({ message: 'Ngày kết thúc không được để trống' })
-  validTo: string;
+  validTo!: string;
 
   @ApiProperty({ example: 'uuid-of-place', description: 'ID of the place' })
   @IsUUID('4', { message: 'ID địa điểm không hợp lệ' })
   @IsNotEmpty()
-  placeId: string;
+  placeId!: string;
 }
