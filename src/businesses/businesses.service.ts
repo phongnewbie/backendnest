@@ -2,10 +2,12 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { mockDb, UserRole } from '../common/mock-data';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { CreateBusinessWithUserDto } from './dto/create-business-with-user.dto';
+import { PaginationDto, PaginationMeta } from '../common/dto/pagination.dto';
 import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
 
@@ -81,11 +83,26 @@ export class BusinessesService {
     return password;
   }
 
-  findAll() {
-    return mockDb.businesses.map((b) => ({
+  findAll(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10, skip } = paginationDto;
+
+    const totalItems = mockDb.businesses.length;
+    const businesses = mockDb.businesses.slice(skip, skip + limit);
+
+    const data = businesses.map((b) => ({
       ...b,
       brands: mockDb.brands.filter((br) => br.businessId === b.id),
     }));
+
+    const meta: PaginationMeta = {
+      itemCount: data.length,
+      totalItems,
+      itemsPerPage: limit,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: page,
+    };
+
+    return { data, meta };
   }
 
   findOne(id: string) {
@@ -97,10 +114,23 @@ export class BusinessesService {
     };
   }
 
-  update(id: string, updateBusinessDto: UpdateBusinessDto) {
-    const index = mockDb.businesses.findIndex((b) => b.id === id);
-    if (index === -1) throw new NotFoundException('Business not found');
+  update(
+    id: string,
+    updateBusinessDto: UpdateBusinessDto,
+    requestUserId: string,
+    userRole: UserRole,
+  ) {
+    const business = mockDb.businesses.find((b) => b.id === id);
+    if (!business) throw new NotFoundException('Business not found');
 
+    // Ownership check: Only the owner or an ADMIN can update
+    if (userRole !== UserRole.ADMIN && business.userId !== requestUserId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền chỉnh sửa thông tin của doanh nghiệp này',
+      );
+    }
+
+    const index = mockDb.businesses.findIndex((b) => b.id === id);
     mockDb.businesses[index] = {
       ...mockDb.businesses[index],
       ...updateBusinessDto,
@@ -115,5 +145,15 @@ export class BusinessesService {
 
     const deleted = mockDb.businesses.splice(index, 1);
     return deleted[0];
+  }
+
+  findByUserId(userId: string) {
+    const business = mockDb.businesses.find((b) => b.userId === userId);
+    if (!business)
+      throw new NotFoundException('Business not found for this user');
+    return {
+      ...business,
+      brands: mockDb.brands.filter((br) => br.businessId === business.id),
+    };
   }
 }
