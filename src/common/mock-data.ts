@@ -33,6 +33,7 @@ export interface Business {
   description?: string;
   email?: string;
   phone?: string;
+  userId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -152,6 +153,7 @@ class MockDb {
       description: 'Tập đoàn đa ngành',
       email: 'contact@acta.vn',
       phone: '0281234567',
+      userId: 'u3',
       createdAt: new Date(),
       updatedAt: new Date(),
     },

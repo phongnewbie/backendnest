@@ -15,8 +15,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { CreateBusinessWithUserDto } from './dto/create-business-with-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -31,13 +31,15 @@ export class BusinessesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Create a new business (Admin only)' })
+  @ApiOperation({
+    summary: 'Create a new business and its owner user (Admin only)',
+  })
   @ApiResponse({
     status: 201,
-    description: 'The business has been successfully created.',
+    description: 'The business and user have been successfully created.',
   })
-  create(@Body() createBusinessDto: CreateBusinessDto) {
-    return this.businessesService.create(createBusinessDto);
+  create(@Body() createBusinessWithUserDto: CreateBusinessWithUserDto) {
+    return this.businessesService.createWithUser(createBusinessWithUserDto);
   }
 
   @Get()
