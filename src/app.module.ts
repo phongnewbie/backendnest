@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
 import { BusinessesModule } from './businesses/businesses.module';
 import { BrandsModule } from './brands/brands.module';
 import { PlacesModule } from './places/places.module';
@@ -19,7 +20,7 @@ import { OffersModule } from './offers/offers.module';
     DynamicQrModule,
     OffersModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}
