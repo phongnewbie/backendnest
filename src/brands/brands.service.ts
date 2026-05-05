@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { mockDb } from '../common/mock-data';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class BrandsService {
@@ -22,6 +23,45 @@ export class BrandsService {
       business: mockDb.businesses.find((b) => b.id === brand.businessId),
       places: mockDb.places.filter((p) => p.brandId === brand.id),
     }));
+  }
+
+  findMyBrands(userId: string, paginationDto: PaginationDto) {
+    const business = mockDb.businesses.find((b) => b.userId === userId);
+    if (!business) return { data: [], meta: this.getEmptyMeta(paginationDto) };
+
+    const brands = mockDb.brands
+      .filter((b) => b.businessId === business.id)
+      .map((brand) => ({
+        ...brand,
+        places: mockDb.places.filter((p) => p.brandId === brand.id),
+      }));
+
+    const totalItems = brands.length;
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+    const data = brands.slice(skip, skip + limit);
+
+    return {
+      data,
+      meta: {
+        itemCount: data.length,
+        totalItems,
+        itemsPerPage: limit,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+      },
+    };
+  }
+
+  private getEmptyMeta(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    return {
+      itemCount: 0,
+      totalItems: 0,
+      itemsPerPage: limit,
+      totalPages: 0,
+      currentPage: page,
+    };
   }
 
   findOne(id: string) {

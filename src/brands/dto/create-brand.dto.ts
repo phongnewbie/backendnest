@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { BrandCategory } from '../../common/mock-data';
 
 export class CreateBrandDto {
   @ApiProperty({ example: 'Brand X', description: 'The name of the brand' })
@@ -24,18 +25,18 @@ export class CreateBrandDto {
   description?: string;
 
   @ApiPropertyOptional({
-    example: 'Coffee Shop',
+    enum: BrandCategory,
+    example: BrandCategory.COFFEE,
     description: 'Brand category',
   })
-  @IsString()
+  @IsEnum(BrandCategory)
   @IsOptional()
-  category?: string;
+  category?: BrandCategory;
 
   @ApiProperty({
-    example: 'uuid-of-business',
+    example: 'id-of-business',
     description: 'The ID of the business this brand belongs to',
   })
-  @IsUUID()
   @IsNotEmpty()
   businessId!: string;
 }
