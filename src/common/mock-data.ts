@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 
 export enum QrType {
   STATIC = 'STATIC',
@@ -274,7 +274,7 @@ class MockDb {
   }
 
   generateId() {
-    return uuidv4();
+    return randomUUID();
   }
 }
 
