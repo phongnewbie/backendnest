@@ -8,5 +8,5 @@ export class SaveOfferDto {
   })
   @IsUUID('4', { message: 'ID người dùng không hợp lệ' })
   @IsNotEmpty()
-  userId: string;
+  userId!: string;
 }
