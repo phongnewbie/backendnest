@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 
 export class CreateBusinessDto {
   @ApiProperty({
@@ -33,4 +39,28 @@ export class CreateBusinessDto {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @ApiPropertyOptional({
+    example: '123 Nguyen Hue, Dist 1, HCMC',
+    description: 'Business address',
+  })
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://acta.vn',
+    description: 'Business website URL',
+  })
+  @IsUrl()
+  @IsOptional()
+  website?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://minio.acta.vn/public/acta-logo.png',
+    description: 'Business logo URL',
+  })
+  @IsUrl()
+  @IsOptional()
+  logoUrl?: string;
 }
