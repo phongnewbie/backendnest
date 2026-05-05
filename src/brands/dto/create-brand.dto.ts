@@ -23,6 +23,14 @@ export class CreateBrandDto {
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({
+    example: 'Coffee Shop',
+    description: 'Brand category',
+  })
+  @IsString()
+  @IsOptional()
+  category?: string;
+
   @ApiProperty({
     example: 'uuid-of-business',
     description: 'The ID of the business this brand belongs to',

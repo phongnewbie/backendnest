@@ -47,6 +47,9 @@ $ yarn run start:prod
 ## Run tests
 
 ```bash
+# Build
+yarn build
+
 # unit tests
 $ yarn run test
 
@@ -55,7 +58,14 @@ $ yarn run test:e2e
 
 # test coverage
 $ yarn run test:cov
+
+# Seed data
+POST /seed
 ```
+
+## API Documentation
+Swagger UI available at: `http://localhost:4000/api/docs`
+
 
 ## Deployment
 
