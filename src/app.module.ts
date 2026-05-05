@@ -8,11 +8,13 @@ import { CheckinsModule } from './checkins/checkins.module';
 import { DynamicQrModule } from './dynamic-qr/dynamic-qr.module';
 import { OffersModule } from './offers/offers.module';
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
+    MailModule,
     BusinessesModule,
     BrandsModule,
     PlacesModule,
