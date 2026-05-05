@@ -40,4 +40,8 @@ src/feature-name/
     - `fix:` sửa lỗi.
     - `docs:` cập nhật tài liệu.
     - `refactor:` tái cấu trúc code nhưng không đổi logic.
-- **Branch:** `feature/feature-name`, `hotfix/issue-name`.
+## 7. TypeScript & Typing
+- **No `any`**: Tuyệt đối KHÔNG sử dụng kiểu `any`. Sử dụng `unknown`, `generics`, hoặc định nghĩa `interface/type` cụ thể.
+- **Explicit Return Types**: Luôn khai báo kiểu trả về cho các function và method.
+- **Strict Mode**: Luôn bật chế độ strict trong `tsconfig.json`.
+

@@ -16,7 +16,7 @@ export class DynamicCheckInDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'Token quét từ QR Code không được để trống' })
-  token: string;
+  token!: string;
 
   @ApiPropertyOptional({
     example: 'Samsung S24, Android 14',

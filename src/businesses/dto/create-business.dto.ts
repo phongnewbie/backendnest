@@ -14,7 +14,7 @@ export class CreateBusinessDto {
   })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({
     example: 'A leading tech company',

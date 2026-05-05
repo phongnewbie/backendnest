@@ -1,19 +1,84 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { mockDb } from '../common/mock-data';
-import { CreateBusinessDto } from './dto/create-business.dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { mockDb, UserRole } from '../common/mock-data';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { CreateBusinessWithUserDto } from './dto/create-business-with-user.dto';
+import { MailService } from '../mail/mail.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class BusinessesService {
-  create(createBusinessDto: CreateBusinessDto) {
+  constructor(private readonly mailService: MailService) {}
+
+  async createWithUser(dto: CreateBusinessWithUserDto) {
+    const existingUser = mockDb.users.find((u) => u.phone === dto.phone);
+    if (existingUser) {
+      throw new BadRequestException(
+        'Số điện thoại đã được đăng ký cho một tài khoản khác',
+      );
+    }
+
+    // 1. Generate random password
+    const rawPassword = this.generatePassword(10);
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
+    // 2. Create User
+    const userId = mockDb.generateId();
+    const newUser = {
+      id: userId,
+      phone: dto.phone,
+      fullName: dto.fullName,
+      password: hashedPassword,
+      role: UserRole.BUSINESS,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockDb.users.push(newUser);
+
+    // 3. Create Business
     const business = {
-      ...createBusinessDto,
       id: mockDb.generateId(),
+      name: dto.businessName,
+      description: dto.description,
+      email: dto.email,
+      phone: dto.phone,
+      userId: userId,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     mockDb.businesses.push(business);
-    return business;
+
+    // 4. Send Email (Async)
+    void this.mailService.sendBusinessLoginInfo(
+      dto.email,
+      dto.phone,
+      rawPassword,
+    );
+
+    return {
+      business,
+      user: {
+        id: newUser.id,
+        phone: newUser.phone,
+        fullName: newUser.fullName,
+        role: newUser.role,
+      },
+      message:
+        'Business and User created successfully. Login info sent to email.',
+    };
+  }
+
+  private generatePassword(length: number): string {
+    const chars =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
   }
 
   findAll() {

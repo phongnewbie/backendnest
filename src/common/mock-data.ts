@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import * as bcrypt from 'bcrypt';
 
 export enum QrType {
   STATIC = 'STATIC',
@@ -10,10 +11,18 @@ export enum OfferStatus {
   USED = 'USED',
 }
 
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  BUSINESS = 'BUSINESS',
+  USER = 'USER',
+}
+
 export interface User {
   id: string;
   phone: string;
   fullName: string;
+  password?: string;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +33,7 @@ export interface Business {
   description?: string;
   email?: string;
   phone?: string;
+  userId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -111,6 +121,26 @@ class MockDb {
       id: 'u1',
       phone: '0901234567',
       fullName: 'Nguyễn Văn A',
+      password: bcrypt.hashSync('password123', 10),
+      role: UserRole.USER,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'u2',
+      phone: '0900000000',
+      fullName: 'Hệ thống Admin',
+      password: bcrypt.hashSync('password123', 10),
+      role: UserRole.ADMIN,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'u3',
+      phone: '0901111111',
+      fullName: 'Chủ Doanh Nghiệp',
+      password: bcrypt.hashSync('password123', 10),
+      role: UserRole.BUSINESS,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -123,6 +153,7 @@ class MockDb {
       description: 'Tập đoàn đa ngành',
       email: 'contact@acta.vn',
       phone: '0281234567',
+      userId: 'u3',
       createdAt: new Date(),
       updatedAt: new Date(),
     },
