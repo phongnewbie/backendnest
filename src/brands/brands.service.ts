@@ -6,7 +6,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class BrandsService {
-  create(createBrandDto: CreateBrandDto) {
+  async create(createBrandDto: CreateBrandDto) {
     const brand = {
       ...createBrandDto,
       id: mockDb.generateId(),
@@ -17,7 +17,7 @@ export class BrandsService {
     return brand;
   }
 
-  findAll() {
+  async findAll() {
     return mockDb.brands.map((brand) => ({
       ...brand,
       business: mockDb.businesses.find((b) => b.id === brand.businessId),
@@ -25,7 +25,7 @@ export class BrandsService {
     }));
   }
 
-  findMyBrands(userId: string, paginationDto: PaginationDto) {
+  async findMyBrands(userId: string, paginationDto: PaginationDto) {
     const business = mockDb.businesses.find((b) => b.userId === userId);
     if (!business) return { data: [], meta: this.getEmptyMeta(paginationDto) };
 
@@ -46,9 +46,9 @@ export class BrandsService {
       meta: {
         itemCount: data.length,
         totalItems,
-        itemsPerPage: limit,
+        itemsPerPage: Number(limit),
         totalPages: Math.ceil(totalItems / limit),
-        currentPage: page,
+        currentPage: Number(page),
       },
     };
   }
@@ -58,13 +58,13 @@ export class BrandsService {
     return {
       itemCount: 0,
       totalItems: 0,
-      itemsPerPage: limit,
+      itemsPerPage: Number(limit),
       totalPages: 0,
-      currentPage: page,
+      currentPage: Number(page),
     };
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     const brand = mockDb.brands.find((b) => b.id === id);
     if (!brand) throw new NotFoundException('Brand not found');
 
@@ -75,7 +75,7 @@ export class BrandsService {
     };
   }
 
-  update(id: string, updateBrandDto: UpdateBrandDto) {
+  async update(id: string, updateBrandDto: UpdateBrandDto) {
     const index = mockDb.brands.findIndex((b) => b.id === id);
     if (index === -1) throw new NotFoundException('Brand not found');
 
@@ -87,7 +87,7 @@ export class BrandsService {
     return mockDb.brands[index];
   }
 
-  remove(id: string) {
+  async remove(id: string) {
     const index = mockDb.brands.findIndex((b) => b.id === id);
     if (index === -1) throw new NotFoundException('Brand not found');
 

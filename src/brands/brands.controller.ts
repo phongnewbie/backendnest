@@ -40,14 +40,14 @@ export class BrandsController {
     status: 201,
     description: 'The brand has been successfully created.',
   })
-  create(@Body() createBrandDto: CreateBrandDto) {
-    return this.brandsService.create(createBrandDto);
+  async create(@Body() createBrandDto: CreateBrandDto) {
+    return await this.brandsService.create(createBrandDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all brands' })
-  findAll() {
-    return this.brandsService.findAll();
+  async findAll() {
+    return await this.brandsService.findAll();
   }
 
   @Get('my-brands')
@@ -57,17 +57,17 @@ export class BrandsController {
   @ApiOperation({
     summary: 'Get all brands of the current business with pagination',
   })
-  findMyBrands(
+  async findMyBrands(
     @Query() paginationDto: PaginationDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.brandsService.findMyBrands(req.user.sub, paginationDto);
+    return await this.brandsService.findMyBrands(req.user.sub, paginationDto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a brand by ID' })
-  findOne(@Param('id') id: string) {
-    return this.brandsService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return await this.brandsService.findOne(id);
   }
 
   @Patch(':id')
@@ -75,8 +75,11 @@ export class BrandsController {
   @Roles(UserRole.BUSINESS)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a brand' })
-  update(@Param('id') id: string, @Body() updateBrandDto: UpdateBrandDto) {
-    return this.brandsService.update(id, updateBrandDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateBrandDto: UpdateBrandDto,
+  ) {
+    return await this.brandsService.update(id, updateBrandDto);
   }
 
   @Delete(':id')
@@ -84,7 +87,7 @@ export class BrandsController {
   @Roles(UserRole.BUSINESS)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a brand' })
-  remove(@Param('id') id: string) {
-    return this.brandsService.remove(id);
+  async remove(@Param('id') id: string) {
+    return await this.brandsService.remove(id);
   }
 }

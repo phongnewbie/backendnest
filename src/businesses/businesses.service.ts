@@ -83,7 +83,7 @@ export class BusinessesService {
     return password;
   }
 
-  findAll(paginationDto: PaginationDto) {
+  async findAll(paginationDto: PaginationDto) {
     const { page = 1, limit = 10, skip } = paginationDto;
 
     const totalItems = mockDb.businesses.length;
@@ -105,7 +105,7 @@ export class BusinessesService {
     return { data, meta };
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     const business = mockDb.businesses.find((b) => b.id === id);
     if (!business) throw new NotFoundException('Business not found');
     return {
@@ -114,7 +114,7 @@ export class BusinessesService {
     };
   }
 
-  update(
+  async update(
     id: string,
     updateBusinessDto: UpdateBusinessDto,
     requestUserId: string,
@@ -139,7 +139,7 @@ export class BusinessesService {
     return mockDb.businesses[index];
   }
 
-  remove(id: string) {
+  async remove(id: string) {
     const index = mockDb.businesses.findIndex((b) => b.id === id);
     if (index === -1) throw new NotFoundException('Business not found');
 
@@ -147,7 +147,7 @@ export class BusinessesService {
     return deleted[0];
   }
 
-  findByUserId(userId: string) {
+  async findByUserId(userId: string) {
     const business = mockDb.businesses.find((b) => b.userId === userId);
     if (!business)
       throw new NotFoundException('Business not found for this user');
