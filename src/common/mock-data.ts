@@ -67,7 +67,8 @@ export interface Place {
   address: string;
   latitude: number;
   longitude: number;
-  openingHours?: string;
+  openTime?: string;
+  closeTime?: string;
   phoneNumber?: string;
   images: string[];
   brandId: string;
@@ -216,7 +217,8 @@ class MockDb {
           address: `${i * 5 + j} Extra St, HCMC`,
           latitude: 10.75 + Math.random() * 0.05,
           longitude: 106.65 + Math.random() * 0.05,
-          openingHours: '09:00 - 21:00',
+          openTime: '09:00',
+          closeTime: '21:00',
           phoneNumber: `0289${Math.floor(Math.random() * 1000000)
             .toString()
             .padStart(6, '0')}`,
@@ -281,7 +283,8 @@ class MockDb {
             address: `${k * 10} Street, HCMC`,
             latitude: 10.7 + Math.random() * 0.1,
             longitude: 106.6 + Math.random() * 0.1,
-            openingHours: '08:00 - 22:00',
+            openTime: '08:00',
+            closeTime: '22:00',
             phoneNumber: `028${Math.floor(Math.random() * 10000000)}`,
             images: [imageUrl],
             brandId: brId,

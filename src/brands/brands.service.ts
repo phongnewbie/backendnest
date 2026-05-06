@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { mockDb } from '../common/mock-data';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
@@ -6,7 +10,21 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class BrandsService {
-  async create(createBrandDto: CreateBrandDto) {
+  async create(createBrandDto: CreateBrandDto, requestUserId: string) {
+    const business = mockDb.businesses.find(
+      (b) => b.id === createBrandDto.businessId,
+    );
+    if (!business) {
+      throw new NotFoundException('Doanh nghiệp không tồn tại');
+    }
+
+    // Strict Ownership check: Only the business owner can create brands
+    if (business.userId !== requestUserId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền tạo thương hiệu cho doanh nghiệp này',
+      );
+    }
+
     const brand = {
       ...createBrandDto,
       id: mockDb.generateId(),
@@ -75,22 +93,48 @@ export class BrandsService {
     };
   }
 
-  async update(id: string, updateBrandDto: UpdateBrandDto) {
+  async update(
+    id: string,
+    updateBrandDto: UpdateBrandDto,
+    requestUserId: string,
+  ) {
+    const brand = mockDb.brands.find((b) => b.id === id);
+    if (!brand) throw new NotFoundException('Brand not found');
+
+    const business = mockDb.businesses.find((b) => b.id === brand.businessId);
+
+    // Strict Ownership check: Only the business owner can update
+    if (!business || business.userId !== requestUserId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền chỉnh sửa thương hiệu này',
+      );
+    }
+
     const index = mockDb.brands.findIndex((b) => b.id === id);
-    if (index === -1) throw new NotFoundException('Brand not found');
+
+    // Ensure businessId is not updated
+    const { ...updateData } = updateBrandDto;
 
     mockDb.brands[index] = {
       ...mockDb.brands[index],
-      ...updateBrandDto,
+      ...updateData,
       updatedAt: new Date(),
     };
     return mockDb.brands[index];
   }
 
-  async remove(id: string) {
-    const index = mockDb.brands.findIndex((b) => b.id === id);
-    if (index === -1) throw new NotFoundException('Brand not found');
+  async remove(id: string, requestUserId: string) {
+    const brand = mockDb.brands.find((b) => b.id === id);
+    if (!brand) throw new NotFoundException('Brand not found');
 
+    const business = mockDb.businesses.find((b) => b.id === brand.businessId);
+
+    // Strict Ownership check: Only the business owner can remove
+    if (!business || business.userId !== requestUserId) {
+      throw new ForbiddenException('Bạn không có quyền xóa thương hiệu này');
+    }
+
+    const index = mockDb.brands.findIndex((b) => b.id === id);
     const deleted = mockDb.brands.splice(index, 1);
     return deleted[0];
   }

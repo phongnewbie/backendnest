@@ -13,6 +13,13 @@ describe('BrandsController', () => {
   let controller: BrandsController;
   let service: BrandsService;
 
+  const mockUser = {
+    sub: 'u1',
+    phone: '0901234567',
+    role: UserRole.BUSINESS,
+  };
+  const mockReq = { user: mockUser } as unknown as RequestWithUser;
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BrandsController],
@@ -51,8 +58,11 @@ describe('BrandsController', () => {
         businessId: 'b1',
         category: BrandCategory.COFFEE,
       };
-      await controller.create(dto);
-      expect(service.create as jest.Mock).toHaveBeenCalledWith(dto);
+      await controller.create(dto, mockReq);
+      expect(service.create as jest.Mock).toHaveBeenCalledWith(
+        dto,
+        mockUser.sub,
+      );
     });
   });
 
@@ -89,15 +99,22 @@ describe('BrandsController', () => {
   describe('update', () => {
     it('should call service.update', async () => {
       const dto: UpdateBrandDto = { name: 'Updated' };
-      await controller.update('1', dto);
-      expect(service.update as jest.Mock).toHaveBeenCalledWith('1', dto);
+      await controller.update('1', dto, mockReq);
+      expect(service.update as jest.Mock).toHaveBeenCalledWith(
+        '1',
+        dto,
+        mockUser.sub,
+      );
     });
   });
 
   describe('remove', () => {
     it('should call service.remove', async () => {
-      await controller.remove('1');
-      expect(service.remove as jest.Mock).toHaveBeenCalledWith('1');
+      await controller.remove('1', mockReq);
+      expect(service.remove as jest.Mock).toHaveBeenCalledWith(
+        '1',
+        mockUser.sub,
+      );
     });
   });
 });

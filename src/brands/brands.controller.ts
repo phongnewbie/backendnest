@@ -40,8 +40,11 @@ export class BrandsController {
     status: 201,
     description: 'The brand has been successfully created.',
   })
-  async create(@Body() createBrandDto: CreateBrandDto) {
-    return await this.brandsService.create(createBrandDto);
+  async create(
+    @Body() createBrandDto: CreateBrandDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return await this.brandsService.create(createBrandDto, req.user.sub);
   }
 
   @Get()
@@ -78,8 +81,9 @@ export class BrandsController {
   async update(
     @Param('id') id: string,
     @Body() updateBrandDto: UpdateBrandDto,
+    @Req() req: RequestWithUser,
   ) {
-    return await this.brandsService.update(id, updateBrandDto);
+    return await this.brandsService.update(id, updateBrandDto, req.user.sub);
   }
 
   @Delete(':id')
@@ -87,7 +91,7 @@ export class BrandsController {
   @Roles(UserRole.BUSINESS)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a brand' })
-  async remove(@Param('id') id: string) {
-    return await this.brandsService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return await this.brandsService.remove(id, req.user.sub);
   }
 }
