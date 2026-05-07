@@ -73,6 +73,32 @@ describe('PlacesController', () => {
     });
   });
 
+  describe('findAll', () => {
+    it('should call service.findAll with correct parameters', async () => {
+      const query = { q: 'test' };
+      const expectedResult = { type: 'FeatureCollection', features: [] };
+      mockPlacesService.findAll.mockResolvedValue(expectedResult);
+
+      const result = await controller.findAll(query);
+
+      expect(service.findAll).toHaveBeenCalledWith(query);
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should call service.findOne with correct parameters', async () => {
+      const id = 'p1';
+      const expectedResult = { id, name: 'Place 1' };
+      mockPlacesService.findOne.mockResolvedValue(expectedResult);
+
+      const result = await controller.findOne(id);
+
+      expect(service.findOne).toHaveBeenCalledWith(id);
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
   describe('update', () => {
     it('should call service.update with correct parameters', async () => {
       const id = 'p1';

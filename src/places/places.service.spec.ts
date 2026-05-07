@@ -69,6 +69,57 @@ describe('PlacesService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('findAll', () => {
+    it('should return all places when no query provided', async () => {
+      const result = await service.findAll({});
+      expect(result.features.length).toBe(1);
+      expect(result.features[0].properties.id).toBe('p1');
+    });
+
+    it('should filter by keyword q', async () => {
+      const result = await service.findAll({ q: 'Place 1' });
+      expect(result.features.length).toBe(1);
+    });
+
+    it('should filter by keyword q (no match)', async () => {
+      const result = await service.findAll({ q: 'Non-existent' });
+      expect(result.features.length).toBe(0);
+    });
+
+    it('should filter by bounding box', async () => {
+      const result = await service.findAll({
+        swLat: 9,
+        swLng: 105,
+        neLat: 11,
+        neLng: 107,
+      });
+      expect(result.features.length).toBe(1);
+    });
+
+    it('should filter by bounding box (out of range)', async () => {
+      const result = await service.findAll({
+        swLat: 0,
+        swLng: 0,
+        neLat: 1,
+        neLng: 1,
+      });
+      expect(result.features.length).toBe(0);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a place by id', async () => {
+      const result = await service.findOne('p1');
+      expect(result.id).toBe('p1');
+    });
+
+    it('should throw NotFoundException if not found', async () => {
+      await expect(service.findOne('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('create', () => {
     it('should create a place successfully if owner', async () => {
       const dto: CreatePlaceDto = {
