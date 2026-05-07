@@ -17,6 +17,15 @@ export enum UserRole {
   USER = 'USER',
 }
 
+export enum BrandCategory {
+  COFFEE = 'COFFEE',
+  RESTAURANT = 'RESTAURANT',
+  CLOTHING = 'CLOTHING',
+  ELECTRONICS = 'ELECTRONICS',
+  BEAUTY = 'BEAUTY',
+  OTHER = 'OTHER',
+}
+
 export interface User {
   id: string;
   phone: string;
@@ -46,6 +55,7 @@ export interface Brand {
   name: string;
   logoUrl?: string;
   description?: string;
+  category?: BrandCategory;
   businessId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -57,7 +67,8 @@ export interface Place {
   address: string;
   latitude: number;
   longitude: number;
-  openingHours?: string;
+  openTime?: string;
+  closeTime?: string;
   phoneNumber?: string;
   images: string[];
   brandId: string;
@@ -184,6 +195,41 @@ class MockDb {
       updatedAt: new Date(),
     });
 
+    // Add more brands and places for business b1 to test pagination
+    for (let i = 1; i <= 15; i++) {
+      const brId = `br-b1-extra-${i}`;
+      this.brands.push({
+        id: brId,
+        name: `Brand Extra ${i} of ACTA Corp`,
+        logoUrl: imageUrl,
+        description: `Description for brand extra ${i}`,
+        category: BrandCategory.COFFEE,
+        businessId: 'b1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      for (let j = 1; j <= 4; j++) {
+        const pId = `p-${brId}-${j}`;
+        this.places.push({
+          id: pId,
+          name: `Store ${j} - Brand Extra ${i}`,
+          address: `${i * 5 + j} Extra St, HCMC`,
+          latitude: 10.75 + Math.random() * 0.05,
+          longitude: 106.65 + Math.random() * 0.05,
+          openTime: '09:00',
+          closeTime: '21:00',
+          phoneNumber: `0289${Math.floor(Math.random() * 1000000)
+            .toString()
+            .padStart(6, '0')}`,
+          images: [imageUrl],
+          brandId: brId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    }
+
     // 3. Generate 20 more Business Users & Businesses
     for (let i = 4; i <= 23; i++) {
       const uId = `u${i}`;
@@ -221,13 +267,15 @@ class MockDb {
           name: `Brand ${j} of ${this.businesses[this.businesses.length - 1].name}`,
           logoUrl: imageUrl,
           description: `Best brand ${j}`,
+          category:
+            j % 2 === 0 ? BrandCategory.RESTAURANT : BrandCategory.COFFEE,
           businessId: bId,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
 
-        // Each Brand has 2 Places
-        for (let k = 1; k <= 2; k++) {
+        // Each Brand has 4 Places
+        for (let k = 1; k <= 4; k++) {
           const pId = `p-${brId}-${k}`;
           this.places.push({
             id: pId,
@@ -235,7 +283,8 @@ class MockDb {
             address: `${k * 10} Street, HCMC`,
             latitude: 10.7 + Math.random() * 0.1,
             longitude: 106.6 + Math.random() * 0.1,
-            openingHours: '08:00 - 22:00',
+            openTime: '08:00',
+            closeTime: '22:00',
             phoneNumber: `028${Math.floor(Math.random() * 10000000)}`,
             images: [imageUrl],
             brandId: brId,

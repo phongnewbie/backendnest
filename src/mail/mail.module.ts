@@ -8,16 +8,16 @@ import { MailService } from './mail.service';
     MailerModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
         transport: {
-          host: config.get('MAIL_HOST', 'smtp.gmail.com'),
-          port: config.get('MAIL_PORT', 587),
+          host: config.get<string>('MAIL_HOST', 'smtp.gmail.com'),
+          port: config.get<number>('MAIL_PORT', 587),
           secure: false,
           auth: {
-            user: config.get('MAIL_USER'),
-            pass: config.get('MAIL_PASS'),
+            user: config.get<string>('MAIL_USER'),
+            pass: config.get<string>('MAIL_PASS'),
           },
         },
         defaults: {
-          from: `"ACTA Support" <${config.get('MAIL_FROM', 'no-reply@acta.vn')}>`,
+          from: `"ACTA Support" <${config.get<string>('MAIL_FROM', 'no-reply@acta.vn')}>`,
         },
       }),
       inject: [ConfigService],

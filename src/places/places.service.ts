@@ -1,11 +1,29 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { mockDb } from '../common/mock-data';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 
 @Injectable()
 export class PlacesService {
-  create(createPlaceDto: CreatePlaceDto) {
+  async create(createPlaceDto: CreatePlaceDto, requestUserId: string) {
+    const brand = mockDb.brands.find((b) => b.id === createPlaceDto.brandId);
+    if (!brand) {
+      throw new NotFoundException('Thương hiệu không tồn tại');
+    }
+
+    const business = mockDb.businesses.find((b) => b.id === brand.businessId);
+
+    // Strict Ownership check: Only the business owner can create places
+    if (!business || business.userId !== requestUserId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền tạo địa điểm cho thương hiệu này',
+      );
+    }
+
     const place = {
       ...createPlaceDto,
       images: createPlaceDto.images || [],
@@ -17,7 +35,7 @@ export class PlacesService {
     return place;
   }
 
-  findAll() {
+  async findAll() {
     return mockDb.places.map((place) => ({
       ...place,
       brand: mockDb.brands
@@ -30,7 +48,7 @@ export class PlacesService {
     }));
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     const place = mockDb.places.find((p) => p.id === id);
     if (!place) {
       throw new NotFoundException(`Địa điểm với ID ${id} không tồn tại`);
@@ -57,6 +75,11 @@ export class PlacesService {
         ? reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length
         : 0;
 
+    const now = new Date();
+    const offers = mockDb.offers.filter(
+      (o) => o.placeId === id && o.validTo >= now,
+    );
+
     return {
       ...place,
       brand: brand
@@ -69,6 +92,7 @@ export class PlacesService {
         : null,
       reviews,
       averageRating: avgRating,
+      offers,
       _count: {
         checkIns: mockDb.checkins.filter((c) => c.placeId === place.id).length,
         reviews: reviews.length,
@@ -76,7 +100,11 @@ export class PlacesService {
     };
   }
 
-  update(id: string, updatePlaceDto: UpdatePlaceDto) {
+  async update(
+    id: string,
+    updatePlaceDto: UpdatePlaceDto,
+    requestUserId: string,
+  ) {
     const index = mockDb.places.findIndex((p) => p.id === id);
     if (index === -1) {
       throw new NotFoundException(
@@ -84,20 +112,45 @@ export class PlacesService {
       );
     }
 
+    const place = mockDb.places[index];
+    const brand = mockDb.brands.find((b) => b.id === place.brandId);
+    const business = brand
+      ? mockDb.businesses.find((b) => b.id === brand.businessId)
+      : null;
+
+    // Strict Ownership check: Only the business owner can update
+    if (!business || business.userId !== requestUserId) {
+      throw new ForbiddenException('Bạn không có quyền chỉnh sửa địa điểm này');
+    }
+
+    // Ensure brandId is not updated
+    const { ...updateData } = updatePlaceDto;
+
     mockDb.places[index] = {
       ...mockDb.places[index],
-      ...updatePlaceDto,
+      ...updateData,
       updatedAt: new Date(),
     };
     return mockDb.places[index];
   }
 
-  remove(id: string) {
+  async remove(id: string, requestUserId: string) {
     const index = mockDb.places.findIndex((p) => p.id === id);
     if (index === -1) {
       throw new NotFoundException(
         `Không thể xóa: Địa điểm với ID ${id} không tồn tại`,
       );
+    }
+
+    const place = mockDb.places[index];
+    const brand = mockDb.brands.find((b) => b.id === place.brandId);
+    const business = brand
+      ? mockDb.businesses.find((b) => b.id === brand.businessId)
+      : null;
+
+    // Strict Ownership check: Only the business owner can remove
+    if (!business || business.userId !== requestUserId) {
+      throw new ForbiddenException('Bạn không có quyền xóa địa điểm này');
     }
 
     const deleted = mockDb.places.splice(index, 1);

@@ -99,7 +99,7 @@ export class AuthService {
     };
   }
 
-  getProfile(userId: string) {
+  async getProfile(userId: string) {
     const user = mockDb.users.find((u) => u.id === userId);
     if (!user) {
       throw new UnauthorizedException('User không tồn tại');

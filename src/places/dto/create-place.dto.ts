@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsOptional,
   IsArray,
-  IsUUID,
 } from 'class-validator';
 
 export class CreatePlaceDto {
@@ -33,12 +32,20 @@ export class CreatePlaceDto {
   longitude!: number;
 
   @ApiPropertyOptional({
-    example: '08:00 - 22:00',
-    description: 'Opening hours',
+    example: '08:00',
+    description: 'Time when the place opens',
   })
   @IsString()
   @IsOptional()
-  openingHours?: string;
+  openTime?: string;
+
+  @ApiPropertyOptional({
+    example: '22:00',
+    description: 'Time when the place closes',
+  })
+  @IsString()
+  @IsOptional()
+  closeTime?: string;
 
   @ApiPropertyOptional({ example: '02812345678', description: 'Phone number' })
   @IsString()
@@ -54,8 +61,7 @@ export class CreatePlaceDto {
   @IsOptional()
   images?: string[];
 
-  @ApiProperty({ example: 'uuid-of-brand', description: 'ID of the brand' })
-  @IsUUID('4', { message: 'ID nhãn hàng không hợp lệ' })
+  @ApiProperty({ example: 'id-of-brand', description: 'ID of the brand' })
   @IsNotEmpty()
   brandId!: string;
 }

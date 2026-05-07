@@ -50,32 +50,32 @@ export class BusinessesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUSINESS)
   @ApiOperation({ summary: 'Get current user business information' })
-  getMyBusiness(@Req() req: RequestWithUser) {
-    return this.businessesService.findByUserId(req.user.sub);
+  async getMyBusiness(@Req() req: RequestWithUser) {
+    return await this.businessesService.findByUserId(req.user.sub);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all businesses with pagination' })
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.businessesService.findAll(paginationDto);
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.businessesService.findAll(paginationDto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a business by ID' })
-  findOne(@Param('id') id: string) {
-    return this.businessesService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return await this.businessesService.findOne(id);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.BUSINESS)
   @ApiOperation({ summary: 'Update a business' })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateBusinessDto: UpdateBusinessDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.businessesService.update(
+    return await this.businessesService.update(
       id,
       updateBusinessDto,
       req.user.sub,
@@ -87,7 +87,7 @@ export class BusinessesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete a business (Admin only)' })
-  remove(@Param('id') id: string) {
-    return this.businessesService.remove(id);
+  async remove(@Param('id') id: string) {
+    return await this.businessesService.remove(id);
   }
 }

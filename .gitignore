@@ -44,5 +44,6 @@ prisma/*.db-journal
 # Documents
 BRD.md
 PLAN.md
+GEMINI.md
 
 /generated/prisma
