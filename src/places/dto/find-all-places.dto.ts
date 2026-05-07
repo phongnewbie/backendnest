@@ -7,7 +7,7 @@ import {
   IsEnum,
   IsBoolean,
 } from 'class-validator';
-import { BrandCategory } from '../../common/mock-data';
+import { BrandCategory } from '@prisma/client';
 
 export class FindAllPlacesDto {
   @ApiPropertyOptional({ description: 'South-West Latitude' })

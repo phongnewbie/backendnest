@@ -1,13 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { mockDb } from '../common/mock-data';
+import type { IPlacesRepository } from '../places/places.repository.interface';
 
 @Injectable()
 export class DynamicQrService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @Inject('IPLACES_REPOSITORY')
+    private readonly placesRepository: IPlacesRepository,
+  ) {}
 
-  generateToken(placeId: string) {
-    const place = mockDb.places.find((p) => p.id === placeId);
+  async generateToken(placeId: string) {
+    const place = await this.placesRepository.findById(placeId);
     if (!place) {
       throw new NotFoundException('Địa điểm không tồn tại');
     }

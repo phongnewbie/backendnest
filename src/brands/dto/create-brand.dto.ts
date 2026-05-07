@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { BrandCategory } from '../../common/mock-data';
+import { BrandCategory } from '@prisma/client';
 
 export class CreateBrandDto {
   @ApiProperty({ example: 'Brand X', description: 'The name of the brand' })

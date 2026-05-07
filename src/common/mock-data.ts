@@ -1,134 +1,32 @@
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import {
+  QrType,
+  OfferStatus,
+  UserRole,
+  BrandCategory,
+  User as PrismaUser,
+  Business as PrismaBusiness,
+  Brand as PrismaBrand,
+  Place as PrismaPlace,
+  CheckIn as PrismaCheckIn,
+  Review as PrismaReview,
+  ReviewReply as PrismaReviewReply,
+  Offer as PrismaOffer,
+  UserOffer as PrismaUserOffer,
+} from '@prisma/client';
 
-export enum QrType {
-  STATIC = 'STATIC',
-  DYNAMIC = 'DYNAMIC',
-}
+export { QrType, OfferStatus, UserRole, BrandCategory };
 
-export enum OfferStatus {
-  SAVED = 'SAVED',
-  USED = 'USED',
-}
-
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  BUSINESS = 'BUSINESS',
-  USER = 'USER',
-}
-
-export enum BrandCategory {
-  COFFEE = 'COFFEE',
-  RESTAURANT = 'RESTAURANT',
-  CLOTHING = 'CLOTHING',
-  ELECTRONICS = 'ELECTRONICS',
-  BEAUTY = 'BEAUTY',
-  OTHER = 'OTHER',
-}
-
-export interface User {
-  id: string;
-  phone: string;
-  fullName: string;
-  password?: string;
-  role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Business {
-  id: string;
-  name: string;
-  description?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  website?: string;
-  logoUrl?: string;
-  userId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Brand {
-  id: string;
-  name: string;
-  logoUrl?: string;
-  description?: string;
-  category?: BrandCategory;
-  businessId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Place {
-  id: string;
-  name: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  checkInRadius?: number; // Bán kính check-in tối đa (mét)
-  openTime?: string;
-  closeTime?: string;
-  phoneNumber?: string;
-  images: string[];
-  brandId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CheckIn {
-  id: string;
-  userId?: string;
-  placeId: string;
-  latitude?: number;
-  longitude?: number;
-  deviceInfo?: string;
-  isGuest: boolean;
-  phone?: string;
-  qrType: QrType;
-  createdAt: Date;
-}
-
-export interface Review {
-  id: string;
-  rating: number;
-  content?: string;
-  images: string[];
-  userId: string;
-  placeId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ReviewReply {
-  id: string;
-  content: string;
-  reviewId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Offer {
-  id: string;
-  title: string;
-  description?: string;
-  terms?: string;
-  validFrom: Date;
-  validTo: Date;
-  placeId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface UserOffer {
-  id: string;
-  userId: string;
-  offerId: string;
-  status: OfferStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type User = PrismaUser;
+export type Business = PrismaBusiness;
+export type Brand = PrismaBrand;
+export type Place = PrismaPlace;
+export type CheckIn = PrismaCheckIn;
+export type Review = PrismaReview;
+export type ReviewReply = PrismaReviewReply;
+export type Offer = PrismaOffer;
+export type UserOffer = PrismaUserOffer;
 
 class MockDb {
   users: User[] = [];
