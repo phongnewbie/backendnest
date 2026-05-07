@@ -8,10 +8,12 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { PlacesService } from './places.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
+import { FindAllPlacesDto } from './dto/find-all-places.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -43,9 +45,9 @@ export class PlacesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all places' })
-  async findAll() {
-    return await this.placesService.findAll();
+  @ApiOperation({ summary: 'Get all places with GeoJSON and map filtering' })
+  async findAll(@Query() query: FindAllPlacesDto) {
+    return await this.placesService.findAll(query);
   }
 
   @Get(':id')

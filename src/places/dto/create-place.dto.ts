@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsArray,
+  Min,
 } from 'class-validator';
 
 export class CreatePlaceDto {
@@ -30,6 +31,16 @@ export class CreatePlaceDto {
   @IsNumber()
   @IsNotEmpty()
   longitude!: number;
+
+  @ApiPropertyOptional({
+    example: 500,
+    description: 'Bán kính check-in tối đa (mét)',
+    default: 500,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  checkInRadius?: number;
 
   @ApiPropertyOptional({
     example: '08:00',

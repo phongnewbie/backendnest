@@ -67,6 +67,7 @@ export interface Place {
   address: string;
   latitude: number;
   longitude: number;
+  checkInRadius?: number; // Bán kính check-in tối đa (mét)
   openTime?: string;
   closeTime?: string;
   phoneNumber?: string;
@@ -217,6 +218,7 @@ class MockDb {
           address: `${i * 5 + j} Extra St, HCMC`,
           latitude: 10.75 + Math.random() * 0.05,
           longitude: 106.65 + Math.random() * 0.05,
+          checkInRadius: 500,
           openTime: '09:00',
           closeTime: '21:00',
           phoneNumber: `0289${Math.floor(Math.random() * 1000000)
@@ -283,6 +285,7 @@ class MockDb {
             address: `${k * 10} Street, HCMC`,
             latitude: 10.7 + Math.random() * 0.1,
             longitude: 106.6 + Math.random() * 0.1,
+            checkInRadius: 500,
             openTime: '08:00',
             closeTime: '22:00',
             phoneNumber: `028${Math.floor(Math.random() * 10000000)}`,

@@ -34,11 +34,13 @@ export class CheckinsService {
         longitude,
       );
       const MAX_DISTANCE =
-        this.configService.get<number>('MAX_CHECKIN_DISTANCE') || 500;
+        place.checkInRadius ??
+        this.configService.get<number>('MAX_CHECKIN_DISTANCE') ??
+        500;
 
       if (distance > MAX_DISTANCE) {
         throw new BadRequestException(
-          `Bạn đang ở quá xa địa điểm này (${Math.round(distance)}m). Giới hạn là ${MAX_DISTANCE}m.`,
+          `Bạn đang ở quá xa địa điểm này (${Math.round(distance)}m). Giới hạn cho phép là ${MAX_DISTANCE}m.`,
         );
       }
     }
