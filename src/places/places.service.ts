@@ -6,6 +6,7 @@ import {
 import { mockDb } from '../common/mock-data';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
+import { FindAllPlacesDto } from './dto/find-all-places.dto';
 
 @Injectable()
 export class PlacesService {
@@ -26,6 +27,7 @@ export class PlacesService {
 
     const place = {
       ...createPlaceDto,
+      checkInRadius: createPlaceDto.checkInRadius ?? 500,
       images: createPlaceDto.images || [],
       id: mockDb.generateId(),
       createdAt: new Date(),
@@ -35,17 +37,124 @@ export class PlacesService {
     return place;
   }
 
-  async findAll() {
-    return mockDb.places.map((place) => ({
-      ...place,
-      brand: mockDb.brands
-        .filter((b) => b.id === place.brandId)
-        .map((b) => ({ id: b.id, name: b.name, logoUrl: b.logoUrl }))[0],
-      _count: {
-        checkIns: mockDb.checkins.filter((c) => c.placeId === place.id).length,
-        reviews: mockDb.reviews.filter((r) => r.placeId === place.id).length,
+  async findAll(query: FindAllPlacesDto) {
+    const { swLat, swLng, neLat, neLng, q, category } = query;
+
+    let filteredPlaces = mockDb.places.map((place) => {
+      const brand = mockDb.brands.find((b) => b.id === place.brandId);
+      const business = brand
+        ? mockDb.businesses.find((b) => b.id === brand.businessId)
+        : null;
+      const reviews = mockDb.reviews.filter((r) => r.placeId === place.id);
+      const avgRating =
+        reviews.length > 0
+          ? reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length
+          : 0;
+
+      return {
+        ...place,
+        brand,
+        business,
+        avgRating,
+      };
+    });
+
+    // Filter by Bounding Box
+    if (
+      swLat !== undefined &&
+      swLng !== undefined &&
+      neLat !== undefined &&
+      neLng !== undefined
+    ) {
+      filteredPlaces = filteredPlaces.filter((p) => {
+        return (
+          p.latitude >= swLat &&
+          p.latitude <= neLat &&
+          p.longitude >= swLng &&
+          p.longitude <= neLng
+        );
+      });
+    }
+
+    // Filter by Keyword (Global Search)
+    if (q) {
+      const search = q.toLowerCase();
+      filteredPlaces = filteredPlaces.filter((p) => {
+        const searchFields = [
+          p.name,
+          p.address,
+          p.phoneNumber,
+          p.openTime,
+          p.closeTime,
+          p.brand?.name,
+          p.business?.name,
+          p.business?.address,
+          p.business?.website,
+          p.business?.description,
+          p.business?.phone,
+        ];
+
+        return searchFields.some((field) =>
+          field?.toLowerCase().includes(search),
+        );
+      });
+    }
+
+    // Filter by Category
+    if (category) {
+      filteredPlaces = filteredPlaces.filter(
+        (p) => p.brand?.category === category,
+      );
+    }
+
+    // Filter by Open Now
+    if (query.isOpenNow) {
+      const now = new Date();
+      // Adjust to Vietnam Time (UTC+7) if needed, but for simplicity use system time
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      const parseTimeToMinutes = (time?: string) => {
+        if (!time) return null;
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+
+      filteredPlaces = filteredPlaces.filter((p) => {
+        const open = parseTimeToMinutes(p.openTime);
+        const close = parseTimeToMinutes(p.closeTime);
+
+        if (open === null || close === null) return true; // Assume always open if no time set
+
+        if (open <= close) {
+          return currentMinutes >= open && currentMinutes <= close;
+        } else {
+          // Open past midnight (e.g., 22:00 - 02:00)
+          return currentMinutes >= open || currentMinutes <= close;
+        }
+      });
+    }
+
+    // Transform to GeoJSON
+    const features = filteredPlaces.map((p) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [p.longitude, p.latitude], // GeoJSON order: [lng, lat]
+      },
+      properties: {
+        id: p.id,
+        name: p.name,
+        address: p.address,
+        logo: p.brand?.logoUrl || null,
+        avgRating: p.avgRating,
+        category: p.brand?.category || null,
       },
     }));
+
+    return {
+      type: 'FeatureCollection',
+      features,
+    };
   }
 
   async findOne(id: string) {
