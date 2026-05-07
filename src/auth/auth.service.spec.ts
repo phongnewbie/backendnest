@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '../common/mock-data';
+import { MockUsersRepository } from '../common/mock-repositories';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -22,6 +23,10 @@ describe('AuthService', () => {
               role: UserRole.USER,
             }),
           },
+        },
+        {
+          provide: 'IUSERS_REPOSITORY',
+          useClass: MockUsersRepository,
         },
       ],
     }).compile();

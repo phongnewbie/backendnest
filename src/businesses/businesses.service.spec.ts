@@ -7,6 +7,12 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { UserRole } from '../common/mock-data';
+import {
+  MockBusinessesRepository,
+  MockUsersRepository,
+} from '../common/mock-repositories';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../common/prisma.service';
 
 describe('BusinessesService', () => {
   let service: BusinessesService;
@@ -16,6 +22,25 @@ describe('BusinessesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BusinessesService,
+        {
+          provide: 'IBUSINESSES_REPOSITORY',
+          useClass: MockBusinessesRepository,
+        },
+        {
+          provide: 'IUSERS_REPOSITORY',
+          useClass: MockUsersRepository,
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            $transaction: jest
+              .fn()
+              .mockImplementation(
+                (cb: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
+                  cb({} as Prisma.TransactionClient),
+              ),
+          },
+        },
         {
           provide: MailService,
           useValue: {

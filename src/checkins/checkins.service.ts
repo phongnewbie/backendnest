@@ -2,25 +2,32 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
-import { mockDb, QrType } from '../common/mock-data';
+import { QrType } from '@prisma/client';
 import { CreateCheckInDto } from './dto/create-checkin.dto';
 import { DynamicCheckInDto } from './dto/dynamic-checkin.dto';
 import { calculateDistance } from '../common/utils/geo.util';
 import { ConfigService } from '@nestjs/config';
 import { DynamicQrService } from '../dynamic-qr/dynamic-qr.service';
+import type { ICheckinsRepository } from './checkins.repository.interface';
+import type { IPlacesRepository } from '../places/places.repository.interface';
 
 @Injectable()
 export class CheckinsService {
   constructor(
     private configService: ConfigService,
     private dynamicQrService: DynamicQrService,
+    @Inject('ICHECKINS_REPOSITORY')
+    private readonly checkinsRepository: ICheckinsRepository,
+    @Inject('IPLACES_REPOSITORY')
+    private readonly placesRepository: IPlacesRepository,
   ) {}
 
-  create(createCheckInDto: CreateCheckInDto) {
+  async create(createCheckInDto: CreateCheckInDto) {
     const { placeId, latitude, longitude, userId, phone } = createCheckInDto;
 
-    const place = mockDb.places.find((p) => p.id === placeId);
+    const place = await this.placesRepository.findById(placeId);
     if (!place) {
       throw new NotFoundException('Địa điểm không tồn tại.');
     }
@@ -52,18 +59,14 @@ export class CheckinsService {
       );
     }
 
-    const checkin = {
+    return this.checkinsRepository.create({
       ...createCheckInDto,
-      id: mockDb.generateId(),
       qrType: QrType.STATIC,
       isGuest,
-      createdAt: new Date(),
-    };
-    mockDb.checkins.push(checkin);
-    return checkin;
+    });
   }
 
-  createDynamic(dynamicCheckInDto: DynamicCheckInDto) {
+  async createDynamic(dynamicCheckInDto: DynamicCheckInDto) {
     const { token, userId, deviceInfo, phone } = dynamicCheckInDto;
 
     const placeId = this.dynamicQrService.verifyToken(token);
@@ -80,29 +83,17 @@ export class CheckinsService {
       );
     }
 
-    const checkin = {
-      id: mockDb.generateId(),
+    return this.checkinsRepository.create({
       placeId,
       userId,
       deviceInfo,
       phone,
       qrType: QrType.DYNAMIC,
       isGuest,
-      createdAt: new Date(),
-    };
-    mockDb.checkins.push(checkin);
-    return checkin;
+    });
   }
 
-  findAllByPlace(placeId: string) {
-    return mockDb.checkins
-      .filter((c) => c.placeId === placeId)
-      .map((c) => ({
-        ...c,
-        user: mockDb.users
-          .filter((u) => u.id === c.userId)
-          .map((u) => ({ id: u.id, fullName: u.fullName, phone: u.phone }))[0],
-      }))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  async findAllByPlace(placeId: string) {
+    return this.checkinsRepository.findAllByPlace(placeId);
   }
 }

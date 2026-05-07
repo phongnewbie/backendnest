@@ -2,9 +2,11 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { mockDb, UserRole } from '../common/mock-data';
+import { UserRole } from '@prisma/client';
+import type { IUsersRepository } from './users.repository.interface';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
@@ -17,35 +19,36 @@ interface JwtPayload {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @Inject('IUSERS_REPOSITORY')
+    private readonly usersRepository: IUsersRepository,
+  ) {}
 
   async register(registerDto: RegisterDto) {
-    const existingUser = mockDb.users.find(
-      (u) => u.phone === registerDto.phone,
+    const existingUser = await this.usersRepository.findByPhone(
+      registerDto.phone,
     );
+
     if (existingUser) {
       throw new BadRequestException('Số điện thoại đã được đăng ký');
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    const newUser = {
-      ...registerDto,
-      role: UserRole.USER,
+    const newUser = await this.usersRepository.create({
+      phone: registerDto.phone,
+      fullName: registerDto.fullName,
       password: hashedPassword,
-      id: mockDb.generateId(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    mockDb.users.push(newUser);
+      role: UserRole.USER,
+    });
 
     const { password: _password, ...result } = newUser;
     return result;
   }
 
   async login(loginDto: LoginDto) {
-    const user = mockDb.users.find((u) => u.phone === loginDto.phone);
+    const user = await this.usersRepository.findByPhone(loginDto.phone);
 
     if (!user || !user.password) {
       throw new UnauthorizedException('Thông tin đăng nhập không chính xác');
@@ -67,7 +70,7 @@ export class AuthService {
     try {
       const payload =
         await this.jwtService.verifyAsync<JwtPayload>(refreshToken);
-      const user = mockDb.users.find((u) => u.id === payload.sub);
+      const user = await this.usersRepository.findById(payload.sub);
 
       if (!user) {
         throw new UnauthorizedException('User không tồn tại');
@@ -86,7 +89,7 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        expiresIn: '15m',
+        expiresIn: '1h', // Increased for testing ease
       }),
       this.jwtService.signAsync(payload, {
         expiresIn: '7d',
@@ -100,7 +103,7 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = mockDb.users.find((u) => u.id === userId);
+    const user = await this.usersRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedException('User không tồn tại');
     }

@@ -4,13 +4,32 @@ import { mockDb, BrandCategory } from '../common/mock-data';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
+import {
+  MockPlacesRepository,
+  MockBrandsRepository,
+  MockBusinessesRepository,
+} from '../common/mock-repositories';
 
 describe('PlacesService', () => {
   let service: PlacesService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PlacesService],
+      providers: [
+        PlacesService,
+        {
+          provide: 'IPLACES_REPOSITORY',
+          useClass: MockPlacesRepository,
+        },
+        {
+          provide: 'IBRANDS_REPOSITORY',
+          useClass: MockBrandsRepository,
+        },
+        {
+          provide: 'IBUSINESSES_REPOSITORY',
+          useClass: MockBusinessesRepository,
+        },
+      ],
     }).compile();
 
     service = module.get<PlacesService>(PlacesService);
@@ -24,6 +43,8 @@ describe('PlacesService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         category: BrandCategory.COFFEE,
+        description: null,
+        logoUrl: null,
       },
       {
         id: 'br2',
@@ -32,6 +53,8 @@ describe('PlacesService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         category: BrandCategory.RESTAURANT,
+        description: null,
+        logoUrl: null,
       },
     ];
     mockDb.businesses = [
@@ -41,6 +64,12 @@ describe('PlacesService', () => {
         userId: 'u1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        description: null,
+        email: null,
+        phone: null,
+        address: null,
+        website: null,
+        logoUrl: null,
       },
       {
         id: 'b2',
@@ -48,6 +77,12 @@ describe('PlacesService', () => {
         userId: 'u2',
         createdAt: new Date(),
         updatedAt: new Date(),
+        description: null,
+        email: null,
+        phone: null,
+        address: null,
+        website: null,
+        logoUrl: null,
       },
     ];
     mockDb.places = [
@@ -61,6 +96,10 @@ describe('PlacesService', () => {
         images: [],
         createdAt: new Date(),
         updatedAt: new Date(),
+        checkInRadius: 500,
+        openTime: null,
+        closeTime: null,
+        phoneNumber: null,
       },
     ];
   });

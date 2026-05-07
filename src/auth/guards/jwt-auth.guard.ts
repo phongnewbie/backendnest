@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { UserRole } from '../../common/mock-data';
+import { UserRole } from '@prisma/client';
 
 export interface JwtPayload {
   sub: string;

@@ -3,8 +3,12 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
-import { mockDb, UserRole } from '../common/mock-data';
+import { UserRole } from '@prisma/client';
+import type { IBusinessesRepository } from './businesses.repository.interface';
+import type { IUsersRepository } from '../auth/users.repository.interface';
+import { PrismaService } from '../common/prisma.service';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { CreateBusinessWithUserDto } from './dto/create-business-with-user.dto';
 import { PaginationDto, PaginationMeta } from '../common/dto/pagination.dto';
@@ -13,10 +17,17 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class BusinessesService {
-  constructor(private readonly mailService: MailService) {}
+  constructor(
+    @Inject('IBUSINESSES_REPOSITORY')
+    private readonly businessesRepository: IBusinessesRepository,
+    @Inject('IUSERS_REPOSITORY')
+    private readonly usersRepository: IUsersRepository,
+    private readonly prisma: PrismaService, // Keep for transactions
+    private readonly mailService: MailService,
+  ) {}
 
   async createWithUser(dto: CreateBusinessWithUserDto) {
-    const existingUser = mockDb.users.find((u) => u.phone === dto.phone);
+    const existingUser = await this.usersRepository.findByPhone(dto.phone);
     if (existingUser) {
       throw new BadRequestException(
         'Số điện thoại đã được đăng ký cho một tài khoản khác',
@@ -27,46 +38,48 @@ export class BusinessesService {
     const rawPassword = this.generatePassword(10);
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
-    // 2. Create User
-    const userId = mockDb.generateId();
-    const newUser = {
-      id: userId,
-      phone: dto.phone,
-      fullName: dto.fullName,
-      password: hashedPassword,
-      role: UserRole.BUSINESS,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    mockDb.users.push(newUser);
+    // 2. Create User and Business in a transaction
+    const { user, business } = await this.prisma.$transaction(async (tx) => {
+      const user = await this.usersRepository.create(
+        {
+          phone: dto.phone,
+          fullName: dto.fullName,
+          password: hashedPassword,
+          role: UserRole.BUSINESS,
+        },
+        tx,
+      );
 
-    // 3. Create Business
-    const business = {
-      id: mockDb.generateId(),
-      name: dto.businessName,
-      description: dto.description,
-      email: dto.email,
-      phone: dto.phone,
-      userId: userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    mockDb.businesses.push(business);
+      const business = await this.businessesRepository.create(
+        {
+          name: dto.businessName,
+          description: dto.description,
+          email: dto.email,
+          phone: dto.phone,
+          userId: user.id,
+        },
+        tx,
+      );
+
+      return { user, business };
+    });
 
     // 4. Send Email (Async)
-    void this.mailService.sendBusinessLoginInfo(
-      dto.email,
-      dto.phone,
-      rawPassword,
-    );
+    if (dto.email) {
+      void this.mailService.sendBusinessLoginInfo(
+        dto.email,
+        dto.phone,
+        rawPassword,
+      );
+    }
 
     return {
       business,
       user: {
-        id: newUser.id,
-        phone: newUser.phone,
-        fullName: newUser.fullName,
-        role: newUser.role,
+        id: user.id,
+        phone: user.phone,
+        fullName: user.fullName,
+        role: user.role,
       },
       message:
         'Business and User created successfully. Login info sent to email.',
@@ -86,32 +99,26 @@ export class BusinessesService {
   async findAll(paginationDto: PaginationDto) {
     const { page = 1, limit = 10, skip } = paginationDto;
 
-    const totalItems = mockDb.businesses.length;
-    const businesses = mockDb.businesses.slice(skip, skip + limit);
-
-    const data = businesses.map((b) => ({
-      ...b,
-      brands: mockDb.brands.filter((br) => br.businessId === b.id),
-    }));
+    const [totalItems, businesses] = await this.businessesRepository.findAll(
+      skip,
+      limit,
+    );
 
     const meta: PaginationMeta = {
-      itemCount: data.length,
+      itemCount: businesses.length,
       totalItems,
       itemsPerPage: limit,
       totalPages: Math.ceil(totalItems / limit),
       currentPage: page,
     };
 
-    return { data, meta };
+    return { data: businesses, meta };
   }
 
   async findOne(id: string) {
-    const business = mockDb.businesses.find((b) => b.id === id);
+    const business = await this.businessesRepository.findById(id);
     if (!business) throw new NotFoundException('Business not found');
-    return {
-      ...business,
-      brands: mockDb.brands.filter((br) => br.businessId === business.id),
-    };
+    return business;
   }
 
   async update(
@@ -120,7 +127,7 @@ export class BusinessesService {
     requestUserId: string,
     userRole: UserRole,
   ) {
-    const business = mockDb.businesses.find((b) => b.id === id);
+    const business = await this.businessesRepository.findById(id);
     if (!business) throw new NotFoundException('Business not found');
 
     // Ownership check: Only the owner or an ADMIN can update
@@ -130,30 +137,20 @@ export class BusinessesService {
       );
     }
 
-    const index = mockDb.businesses.findIndex((b) => b.id === id);
-    mockDb.businesses[index] = {
-      ...mockDb.businesses[index],
-      ...updateBusinessDto,
-      updatedAt: new Date(),
-    };
-    return mockDb.businesses[index];
+    return this.businessesRepository.update(id, updateBusinessDto);
   }
 
   async remove(id: string) {
-    const index = mockDb.businesses.findIndex((b) => b.id === id);
-    if (index === -1) throw new NotFoundException('Business not found');
+    const business = await this.businessesRepository.findById(id);
+    if (!business) throw new NotFoundException('Business not found');
 
-    const deleted = mockDb.businesses.splice(index, 1);
-    return deleted[0];
+    return this.businessesRepository.delete(id);
   }
 
   async findByUserId(userId: string) {
-    const business = mockDb.businesses.find((b) => b.userId === userId);
+    const business = await this.businessesRepository.findByUserId(userId);
     if (!business)
       throw new NotFoundException('Business not found for this user');
-    return {
-      ...business,
-      brands: mockDb.brands.filter((br) => br.businessId === business.id),
-    };
+    return business;
   }
 }

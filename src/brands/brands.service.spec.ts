@@ -1,13 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BrandsService } from './brands.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import {
+  MockBrandsRepository,
+  MockBusinessesRepository,
+} from '../common/mock-repositories';
 
 describe('BrandsService', () => {
   let service: BrandsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BrandsService],
+      providers: [
+        BrandsService,
+        {
+          provide: 'IBRANDS_REPOSITORY',
+          useClass: MockBrandsRepository,
+        },
+        {
+          provide: 'IBUSINESSES_REPOSITORY',
+          useClass: MockBusinessesRepository,
+        },
+      ],
     }).compile();
 
     service = module.get<BrandsService>(BrandsService);

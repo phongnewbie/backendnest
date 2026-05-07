@@ -10,10 +10,12 @@ import { DynamicQrModule } from './dynamic-qr/dynamic-qr.module';
 import { OffersModule } from './offers/offers.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
+import { PrismaModule } from './common/prisma.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
     AuthModule,
     MailModule,
     BusinessesModule,
