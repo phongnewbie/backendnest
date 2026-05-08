@@ -4,7 +4,6 @@ import { BusinessesService } from './businesses.service';
 import { UserRole } from '../common/mock-data';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import type { RequestWithUser } from '../auth/guards/jwt-auth.guard';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 describe('BusinessesController', () => {
@@ -59,10 +58,7 @@ describe('BusinessesController', () => {
 
   describe('getMyBusiness', () => {
     it('should call service.findByUserId', async () => {
-      const req = {
-        user: { sub: 'u1', phone: '0901234567', role: UserRole.BUSINESS },
-      } as unknown as RequestWithUser;
-      await controller.getMyBusiness(req);
+      await controller.getMyBusiness('u1');
       expect(service.findByUserId as jest.Mock).toHaveBeenCalledWith('u1');
     });
   });
@@ -87,10 +83,7 @@ describe('BusinessesController', () => {
   describe('update', () => {
     it('should call service.update', async () => {
       const dto = { name: 'Updated' };
-      const req = {
-        user: { sub: 'u1', phone: '0901234567', role: UserRole.BUSINESS },
-      } as unknown as RequestWithUser;
-      await controller.update('1', dto, req);
+      await controller.update('1', dto, 'u1', UserRole.BUSINESS);
       expect(service.update as jest.Mock).toHaveBeenCalledWith(
         '1',
         dto,

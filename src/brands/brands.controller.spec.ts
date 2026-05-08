@@ -7,7 +7,6 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { BrandCategory, UserRole } from '../common/mock-data';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import type { RequestWithUser } from '../auth/guards/jwt-auth.guard';
 
 describe('BrandsController', () => {
   let controller: BrandsController;
@@ -18,7 +17,6 @@ describe('BrandsController', () => {
     phone: '0901234567',
     role: UserRole.BUSINESS,
   };
-  const mockReq = { user: mockUser } as unknown as RequestWithUser;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -58,7 +56,7 @@ describe('BrandsController', () => {
         businessId: 'b1',
         category: BrandCategory.COFFEE,
       };
-      await controller.create(dto, mockReq);
+      await controller.create(dto, mockUser.sub);
       expect(service.create as jest.Mock).toHaveBeenCalledWith(
         dto,
         mockUser.sub,
@@ -78,10 +76,7 @@ describe('BrandsController', () => {
       const paginationDto = new PaginationDto();
       paginationDto.page = 1;
       paginationDto.limit = 10;
-      const req = {
-        user: { sub: 'u1', phone: '0901234567', role: UserRole.BUSINESS },
-      } as unknown as RequestWithUser;
-      await controller.findMyBrands(paginationDto, req);
+      await controller.findMyBrands(paginationDto, 'u1');
       expect(service.findMyBrands as jest.Mock).toHaveBeenCalledWith(
         'u1',
         paginationDto,
@@ -99,7 +94,7 @@ describe('BrandsController', () => {
   describe('update', () => {
     it('should call service.update', async () => {
       const dto: UpdateBrandDto = { name: 'Updated' };
-      await controller.update('1', dto, mockReq);
+      await controller.update('1', dto, mockUser.sub);
       expect(service.update as jest.Mock).toHaveBeenCalledWith(
         '1',
         dto,
@@ -110,7 +105,7 @@ describe('BrandsController', () => {
 
   describe('remove', () => {
     it('should call service.remove', async () => {
-      await controller.remove('1', mockReq);
+      await controller.remove('1', mockUser.sub);
       expect(service.remove as jest.Mock).toHaveBeenCalledWith(
         '1',
         mockUser.sub,

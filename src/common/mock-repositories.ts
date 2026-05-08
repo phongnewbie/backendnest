@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, User, Business, Brand, Place } from '@prisma/client';
+import { Prisma, User, Business, Brand, Place, CheckIn } from '@prisma/client';
 import { mockDb } from './mock-data';
 import { IUsersRepository } from '../auth/users.repository.interface';
+import {
+  ICheckinsRepository,
+  CheckInWithUser,
+  CheckInWithPlace,
+} from '../checkins/checkins.repository.interface';
 import {
   IBusinessesRepository,
   BusinessWithBrands,
@@ -306,5 +311,117 @@ export class MockPlacesRepository implements IPlacesRepository {
     if (index === -1) throw new Error('Place not found');
     const place = mockDb.places.splice(index, 1)[0];
     return place;
+  }
+}
+
+@Injectable()
+export class MockCheckinsRepository implements ICheckinsRepository {
+  async create(data: Prisma.CheckInUncheckedCreateInput): Promise<CheckIn> {
+    const newCheckIn: CheckIn = {
+      id: mockDb.generateId(),
+      userId: data.userId ?? null,
+      placeId: data.placeId,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
+      deviceInfo: data.deviceInfo ?? null,
+      isGuest: data.isGuest ?? false,
+      phone: data.phone ?? null,
+      qrType: data.qrType,
+      createdAt: new Date(),
+    };
+    mockDb.checkins.push(newCheckIn);
+    return newCheckIn;
+  }
+
+  async findAllByPlace(placeId: string): Promise<CheckInWithUser[]> {
+    return mockDb.checkins
+      .filter((c) => c.placeId === placeId)
+      .map((c) => ({
+        ...c,
+        user: mockDb.users.find((u) => u.id === c.userId)
+          ? {
+              id: c.userId!,
+              fullName: mockDb.users.find((u) => u.id === c.userId)!.fullName,
+              phone: mockDb.users.find((u) => u.id === c.userId)!.phone,
+            }
+          : null,
+      }));
+  }
+
+  async findPaginated(params: {
+    placeId: string;
+    cursor?: string;
+    limit: number;
+  }): Promise<CheckInWithUser[]> {
+    const { placeId, cursor, limit } = params;
+    let checkins = mockDb.checkins
+      .filter((c) => c.placeId === placeId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    if (cursor) {
+      const cursorIndex = checkins.findIndex((c) => c.id === cursor);
+      if (cursorIndex !== -1) {
+        checkins = checkins.slice(cursorIndex + 1);
+      }
+    }
+
+    return checkins.slice(0, limit).map((c) => ({
+      ...c,
+      user: mockDb.users.find((u) => u.id === c.userId)
+        ? {
+            id: c.userId!,
+            fullName: mockDb.users.find((u) => u.id === c.userId)!.fullName,
+            phone: mockDb.users.find((u) => u.id === c.userId)!.phone,
+          }
+        : null,
+    }));
+  }
+
+  async findPaginatedByUser(params: {
+    userId: string;
+    cursor?: string;
+    limit: number;
+    from?: Date;
+    to?: Date;
+  }): Promise<CheckInWithPlace[]> {
+    const { userId, cursor, limit, from, to } = params;
+    let checkins = mockDb.checkins
+      .filter((c) => {
+        if (c.userId !== userId) return false;
+        if (from && c.createdAt < from) return false;
+        if (to && c.createdAt > to) return false;
+        return true;
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    if (cursor) {
+      const idx = checkins.findIndex((c) => c.id === cursor);
+      if (idx !== -1) checkins = checkins.slice(idx + 1);
+    }
+
+    return checkins.slice(0, limit).map((c) => {
+      const place = mockDb.places.find((p) => p.id === c.placeId)!;
+      return {
+        ...c,
+        place: { id: place.id, name: place.name, address: place.address },
+      };
+    });
+  }
+
+  async countDailyCheckIn(params: {
+    placeId: string;
+    userId?: string | null;
+    phone?: string | null;
+    startDate: Date;
+    endDate: Date;
+  }): Promise<number> {
+    const { placeId, userId, phone, startDate, endDate } = params;
+    return mockDb.checkins.filter((c) => {
+      const isSamePlace = c.placeId === placeId;
+      const isWithinRange = c.createdAt >= startDate && c.createdAt <= endDate;
+      const matchesUser = userId && c.userId === userId;
+      const matchesPhone = phone && c.phone === phone;
+      return isSamePlace && isWithinRange && (matchesUser || matchesPhone);
+    }).length;
   }
 }

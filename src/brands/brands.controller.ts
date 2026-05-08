@@ -8,7 +8,6 @@ import {
   Delete,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { BrandsService } from './brands.service';
 import {
@@ -21,10 +20,10 @@ import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import type { RequestWithUser } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
+import { GetUserId } from '../auth/decorators/user-id.decorator';
 
 @ApiTags('brands')
 @Controller('brands')
@@ -42,9 +41,9 @@ export class BrandsController {
   })
   async create(
     @Body() createBrandDto: CreateBrandDto,
-    @Req() req: RequestWithUser,
+    @GetUserId() userId: string,
   ) {
-    return await this.brandsService.create(createBrandDto, req.user.sub);
+    return await this.brandsService.create(createBrandDto, userId);
   }
 
   @Get()
@@ -62,9 +61,9 @@ export class BrandsController {
   })
   async findMyBrands(
     @Query() paginationDto: PaginationDto,
-    @Req() req: RequestWithUser,
+    @GetUserId() userId: string,
   ) {
-    return await this.brandsService.findMyBrands(req.user.sub, paginationDto);
+    return await this.brandsService.findMyBrands(userId, paginationDto);
   }
 
   @Get(':id')
@@ -81,9 +80,9 @@ export class BrandsController {
   async update(
     @Param('id') id: string,
     @Body() updateBrandDto: UpdateBrandDto,
-    @Req() req: RequestWithUser,
+    @GetUserId() userId: string,
   ) {
-    return await this.brandsService.update(id, updateBrandDto, req.user.sub);
+    return await this.brandsService.update(id, updateBrandDto, userId);
   }
 
   @Delete(':id')
@@ -91,7 +90,7 @@ export class BrandsController {
   @Roles(UserRole.BUSINESS)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a brand' })
-  async remove(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return await this.brandsService.remove(id, req.user.sub);
+  async remove(@Param('id') id: string, @GetUserId() userId: string) {
+    return await this.brandsService.remove(id, userId);
   }
 }

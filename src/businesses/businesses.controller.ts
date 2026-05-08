@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   UseGuards,
-  Req,
   Query,
 } from '@nestjs/common';
 import { BusinessesService } from './businesses.service';
@@ -21,10 +20,11 @@ import { UpdateBusinessDto } from './dto/update-business.dto';
 import { CreateBusinessWithUserDto } from './dto/create-business-with-user.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import type { RequestWithUser } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
+import { GetUserId } from '../auth/decorators/user-id.decorator';
+import { GetUserRole } from '../auth/decorators/user-role.decorator';
 
 @ApiTags('businesses')
 @ApiBearerAuth()
@@ -50,8 +50,8 @@ export class BusinessesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUSINESS)
   @ApiOperation({ summary: 'Get current user business information' })
-  async getMyBusiness(@Req() req: RequestWithUser) {
-    return await this.businessesService.findByUserId(req.user.sub);
+  async getMyBusiness(@GetUserId() userId: string) {
+    return await this.businessesService.findByUserId(userId);
   }
 
   @Get()
@@ -73,13 +73,14 @@ export class BusinessesController {
   async update(
     @Param('id') id: string,
     @Body() updateBusinessDto: UpdateBusinessDto,
-    @Req() req: RequestWithUser,
+    @GetUserId() userId: string,
+    @GetUserRole() role: UserRole,
   ) {
     return await this.businessesService.update(
       id,
       updateBusinessDto,
-      req.user.sub,
-      req.user.role,
+      userId,
+      role,
     );
   }
 

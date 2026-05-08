@@ -8,14 +8,6 @@ import {
 } from 'class-validator';
 
 export class CreateCheckInDto {
-  @ApiPropertyOptional({
-    example: 'uuid-of-user',
-    description: 'ID of the user',
-  })
-  @IsUUID('4', { message: 'ID người dùng không hợp lệ' })
-  @IsOptional()
-  userId?: string;
-
   @ApiProperty({ example: 'uuid-of-place', description: 'ID of the place' })
   @IsUUID('4', { message: 'ID địa điểm không hợp lệ' })
   @IsNotEmpty({ message: 'ID địa điểm không được để trống' })

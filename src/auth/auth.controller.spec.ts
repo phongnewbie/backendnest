@@ -3,7 +3,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UserRole } from '../common/mock-data';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import type { RequestWithUser } from './guards/jwt-auth.guard';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -78,8 +77,7 @@ describe('AuthController', () => {
 
   describe('getProfile', () => {
     it('should call authService.getProfile', async () => {
-      const req = { user: { sub: 'u1' } } as unknown as RequestWithUser;
-      await controller.getProfile(req);
+      await controller.getProfile('u1');
       expect(service.getProfile as jest.Mock).toHaveBeenCalledWith('u1');
     });
   });
