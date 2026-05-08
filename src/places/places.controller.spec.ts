@@ -6,7 +6,6 @@ import { UpdatePlaceDto } from './dto/update-place.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../common/mock-data';
-import type { RequestWithUser } from '../auth/guards/jwt-auth.guard';
 
 describe('PlacesController', () => {
   let controller: PlacesController;
@@ -25,10 +24,6 @@ describe('PlacesController', () => {
     phone: '0901111111',
     role: UserRole.BUSINESS,
   };
-
-  const mockReq = {
-    user: mockUser,
-  } as unknown as RequestWithUser;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -66,7 +61,7 @@ describe('PlacesController', () => {
       const expectedResult = { id: 'p1', ...dto };
       mockPlacesService.create.mockResolvedValue(expectedResult);
 
-      const result = await controller.create(dto, mockReq);
+      const result = await controller.create(dto, mockUser.sub);
 
       expect(service.create).toHaveBeenCalledWith(dto, mockUser.sub);
       expect(result).toEqual(expectedResult);
@@ -108,7 +103,7 @@ describe('PlacesController', () => {
       const expectedResult = { id, ...dto };
       mockPlacesService.update.mockResolvedValue(expectedResult);
 
-      const result = await controller.update(id, dto, mockReq);
+      const result = await controller.update(id, dto, mockUser.sub);
 
       expect(service.update).toHaveBeenCalledWith(id, dto, mockUser.sub);
       expect(result).toEqual(expectedResult);
@@ -121,7 +116,7 @@ describe('PlacesController', () => {
       const expectedResult = { id, name: 'Deleted Place' };
       mockPlacesService.remove.mockResolvedValue(expectedResult);
 
-      const result = await controller.remove(id, mockReq);
+      const result = await controller.remove(id, mockUser.sub);
 
       expect(service.remove).toHaveBeenCalledWith(id, mockUser.sub);
       expect(result).toEqual(expectedResult);
